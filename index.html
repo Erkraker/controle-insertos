@@ -1,425 +1,65 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Controle de Insertos - V3</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#111827" />
-  <style>
-    :root {
-      --bg: #f1f3f6;
-      --card: #ffffff;
-      --text: #111827;
-      --muted: #6b7280;
-      --primary: #111827;
-      --green: #16a34a;
-      --red: #dc2626;
-      --blue: #2563eb;
-      --border: #e5e7eb;
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      padding: 16px;
-    }
-
-    .app {
-      max-width: 980px;
-      margin: 0 auto;
-    }
-
-    header {
-      background: var(--primary);
-      color: white;
-      padding: 20px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-    }
-
-    header h1 {
-      margin: 0 0 6px;
-      font-size: 24px;
-    }
-
-    header p {
-      margin: 0;
-      color: #d1d5db;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .tabs button {
-      border: 1px solid var(--border);
-      background: white;
-      padding: 11px 14px;
-      border-radius: 10px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .tabs button.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 18px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-      border: 1px solid var(--border);
-    }
-
-    .tab { display: none; }
-    .tab.active { display: block; }
-
-    label {
-      display: block;
-      margin-top: 12px;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
-
-    input, select, textarea {
-      width: 100%;
-      padding: 12px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 16px;
-    }
-
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 10px;
-      padding: 13px 16px;
-      cursor: pointer;
-      font-weight: bold;
-      font-size: 15px;
-      margin-top: 16px;
-    }
-
-    .btn-primary { background: var(--blue); color: white; }
-    .btn-green { background: var(--green); color: white; }
-    .btn-red { background: var(--red); color: white; }
-    .btn-dark { background: var(--primary); color: white; }
-
-    .result {
-      margin-top: 16px;
-      padding: 16px;
-      border-radius: 14px;
-      background: #f9fafb;
-      border: 1px solid var(--border);
-    }
-
-    .ok { color: var(--green); font-weight: bold; }
-    .erro { color: var(--red); font-weight: bold; }
-
-    .history-item {
-      padding: 12px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      margin-bottom: 10px;
-      background: #f9fafb;
-    }
-
-    .muted { color: var(--muted); }
-
-    @media (max-width: 720px) {
-      .grid { grid-template-columns: 1fr; }
-      body { padding: 10px; }
-      header h1 { font-size: 21px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Insertos V3 Protótipo</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f5f5f5;padding:20px}
+.container{max-width:900px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.tabs button{padding:10px 16px;margin-right:8px;border:none;border-radius:8px;background:#ddd;cursor:pointer}
+.tabs button.active{background:#2563eb;color:#fff}
+.tab{display:none;margin-top:20px}
+.tab.active{display:block}
+input{display:block;width:100%;padding:10px;margin:8px 0 16px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
+.action{background:#16a34a;color:#fff;padding:12px;border:none;border-radius:8px;cursor:pointer}
+.result{margin-top:16px;padding:16px;background:#eef6ff;border-radius:8px}
+</style>
 </head>
-
 <body>
-  <div class="app">
-    <header>
-      <h1>Controle de Insertos - V3</h1>
-      <p>Protótipo operacional com definição de broca por tamanho.</p>
-    </header>
-
-    <div class="tabs">
-      <button class="active" onclick="abrirAba('calcular', this)">Calcular</button>
-      <button onclick="abrirAba('broca', this)">Definir Broca</button>
-      <button onclick="abrirAba('historico', this)">Histórico</button>
-    </div>
-
-    <section id="calcular" class="tab active card">
-      <h2>Calcular Inserto</h2>
-      <p class="muted">Área preservada para o cálculo principal do protótipo.</p>
-
-      <div class="grid">
-        <div>
-          <label>Peça / Moenda</label>
-          <input id="pecaInserto" placeholder="Ex: Moenda X" />
-        </div>
-        <div>
-          <label>Operador</label>
-          <input id="operadorInserto" placeholder="Nome do operador" />
-        </div>
-        <div>
-          <label>Metragem da operação</label>
-          <input id="metragemOperacao" type="number" step="0.01" placeholder="Ex: 85" />
-        </div>
-        <div>
-          <label>Vida segura do inserto</label>
-          <input id="vidaInserto" type="number" step="0.01" placeholder="Ex: 300" />
-        </div>
-      </div>
-
-      <button class="btn btn-green" onclick="calcularInserto()">Calcular Vida</button>
-      <div id="resultadoInserto" class="result"></div>
-    </section>
-
-    <section id="broca" class="tab card">
-      <h2>Definir Broca</h2>
-      <p class="muted">Informe as medidas do processo para o sistema indicar broca curta ou longa.</p>
-
-      <div class="grid">
-        <div>
-          <label>Diâmetro do furo (mm)</label>
-          <input id="diametroFuro" type="number" step="0.01" placeholder="16 ou 18" />
-        </div>
-        <div>
-          <label>Profundidade do furo (mm)</label>
-          <input id="profundidadeFuro" type="number" step="0.01" />
-        </div>
-        <div>
-          <label>Altura do friso (mm)</label>
-          <input id="alturaFriso" type="number" step="0.01" />
-        </div>
-        <div>
-          <label>Deslocamento maior em X (mm)</label>
-          <input id="deslocamentoX" type="number" step="0.01" />
-        </div>
-        <div>
-          <label>Diâmetro da camisa (mm)</label>
-          <input id="diametroCamisa" type="number" step="0.01" />
-        </div>
-        <div>
-          <label>Máquina</label>
-          <select id="maquinaBroca">
-            <option value="">Selecione</option>
-            <option>CNC</option>
-            <option>Lazarte</option>
-            <option>Hitachi</option>
-            <option>Outra</option>
-          </select>
-        </div>
-      </div>
-
-      <label>Observação</label>
-      <textarea id="obsBroca" placeholder="Ex: ferramenta disponível na máquina, condição do inserto, etc."></textarea>
-
-      <button class="btn btn-primary" onclick="definirBroca()">Definir Broca</button>
-      <button class="btn btn-dark" onclick="salvarResultadoBroca()">Salvar no Histórico</button>
-
-      <div id="resultadoBroca" class="result"></div>
-    </section>
-
-    <section id="historico" class="tab card">
-      <h2>Histórico</h2>
-      <p class="muted">Registros salvos neste navegador.</p>
-      <button class="btn btn-red" onclick="limparHistorico()">Limpar Histórico</button>
-      <div id="listaHistorico" style="margin-top:16px;"></div>
-    </section>
-  </div>
-
-  <script>
-    const brocas = {
-      16: { curta: 153, longa: 217 },
-      18: { curta: 172.5, longa: 244.5 }
-    };
-
-    let ultimoResultadoBroca = null;
-
-    function abrirAba(id, botao) {
-      document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
-      document.querySelectorAll(".tabs button").forEach(btn => btn.classList.remove("active"));
-      document.getElementById(id).classList.add("active");
-      botao.classList.add("active");
-
-      if (id === "historico") carregarHistorico();
-    }
-
-    function numero(id) {
-      return Number(document.getElementById(id).value.replace(",", "."));
-    }
-
-    function calcularInserto() {
-      const peca = document.getElementById("pecaInserto").value.trim();
-      const operador = document.getElementById("operadorInserto").value.trim();
-      const metragem = numero("metragemOperacao");
-      const vida = numero("vidaInserto");
-
-      if (!metragem || !vida) {
-        document.getElementById("resultadoInserto").innerHTML = "<span class='erro'>Preencha metragem e vida segura do inserto.</span>";
-        return;
-      }
-
-      const restante = vida - metragem;
-      const percentual = (metragem / vida) * 100;
-      const status = restante >= 0 ? "OK dentro da vida segura" : "Atenção: passou da vida segura";
-
-      document.getElementById("resultadoInserto").innerHTML = `
-        <h3>Resultado</h3>
-        <p><strong>Peça:</strong> ${peca || "-"}</p>
-        <p><strong>Operador:</strong> ${operador || "-"}</p>
-        <p><strong>Vida consumida:</strong> ${percentual.toFixed(1)}%</p>
-        <p><strong>Vida restante:</strong> ${restante.toFixed(2)} mm</p>
-        <p><strong>Status:</strong> <span class="${restante >= 0 ? "ok" : "erro"}">${status}</span></p>
-      `;
-
-      salvarHistorico({
-        tipo: "Cálculo de Inserto",
-        data: new Date().toLocaleString("pt-BR"),
-        peca,
-        operador,
-        metragem,
-        vida,
-        status
-      });
-    }
-
-    function definirBroca() {
-      const diametroFuro = numero("diametroFuro");
-      const profundidade = numero("profundidadeFuro");
-      const alturaFriso = numero("alturaFriso") || 0;
-      const deslocamentoX = numero("deslocamentoX") || 0;
-      const diametroCamisa = numero("diametroCamisa") || 0;
-      const maquina = document.getElementById("maquinaBroca").value;
-      const observacao = document.getElementById("obsBroca").value.trim();
-
-      if (!diametroFuro || !profundidade) {
-        document.getElementById("resultadoBroca").innerHTML = "<span class='erro'>Preencha diâmetro do furo e profundidade do furo.</span>";
-        return;
-      }
-
-      const brocaDiametro = diametroFuro <= 16 ? 16 : 18;
-      const necessario = profundidade + alturaFriso + deslocamentoX;
-      const dados = brocas[brocaDiametro];
-
-      let tipo = "";
-      let limite = 0;
-      let atende = true;
-
-      if (necessario <= dados.curta) {
-        tipo = "Curta";
-        limite = dados.curta;
-      } else if (necessario <= dados.longa) {
-        tipo = "Longa";
-        limite = dados.longa;
-      } else {
-        tipo = "Não atende";
-        limite = dados.longa;
-        atende = false;
-      }
-
-      const folga = limite - necessario;
-      const status = atende ? "OK para operação" : "Necessário buscar outra solução";
-
-      ultimoResultadoBroca = {
-        tipo: "Definição de Broca",
-        data: new Date().toLocaleString("pt-BR"),
-        diametroFuro,
-        profundidade,
-        alturaFriso,
-        deslocamentoX,
-        diametroCamisa,
-        maquina,
-        brocaDiametro,
-        brocaTipo: tipo,
-        necessario,
-        limite,
-        folga,
-        status,
-        observacao
-      };
-
-      document.getElementById("resultadoBroca").innerHTML = `
-        <h3>Resultado</h3>
-        <p><strong>Broca recomendada:</strong> Ø${brocaDiametro} ${tipo}</p>
-        <p><strong>Comprimento necessário:</strong> ${necessario.toFixed(2)} mm</p>
-        <p><strong>Limite da broca:</strong> ${limite.toFixed(2)} mm</p>
-        <p><strong>Folga:</strong> ${folga.toFixed(2)} mm</p>
-        <p><strong>Máquina:</strong> ${maquina || "-"}</p>
-        <p><strong>Status:</strong> <span class="${atende ? "ok" : "erro"}">${status}</span></p>
-      `;
-    }
-
-    function salvarResultadoBroca() {
-      if (!ultimoResultadoBroca) {
-        document.getElementById("resultadoBroca").innerHTML = "<span class='erro'>Defina a broca antes de salvar.</span>";
-        return;
-      }
-
-      salvarHistorico(ultimoResultadoBroca);
-      document.getElementById("resultadoBroca").innerHTML += "<p class='ok'>Registro salvo no histórico.</p>";
-    }
-
-    function salvarHistorico(item) {
-      const historico = JSON.parse(localStorage.getItem("historicoInsertosV3") || "[]");
-      historico.unshift(item);
-      localStorage.setItem("historicoInsertosV3", JSON.stringify(historico));
-    }
-
-    function carregarHistorico() {
-      const historico = JSON.parse(localStorage.getItem("historicoInsertosV3") || "[]");
-      const lista = document.getElementById("listaHistorico");
-
-      if (!historico.length) {
-        lista.innerHTML = "<p>Nenhum registro salvo ainda.</p>";
-        return;
-      }
-
-      lista.innerHTML = historico.map(item => `
-        <div class="history-item">
-          <strong>${item.tipo}</strong><br>
-          <span class="muted">${item.data}</span>
-          ${item.peca ? `<p><strong>Peça:</strong> ${item.peca}</p>` : ""}
-          ${item.operador ? `<p><strong>Operador:</strong> ${item.operador}</p>` : ""}
-          ${item.brocaDiametro ? `<p><strong>Broca:</strong> Ø${item.brocaDiametro} ${item.brocaTipo}</p>` : ""}
-          ${item.necessario ? `<p><strong>Comprimento necessário:</strong> ${item.necessario.toFixed(2)} mm</p>` : ""}
-          ${item.maquina ? `<p><strong>Máquina:</strong> ${item.maquina}</p>` : ""}
-          <p><strong>Status:</strong> ${item.status || "-"}</p>
-          ${item.observacao ? `<p><strong>Obs:</strong> ${item.observacao}</p>` : ""}
-        </div>
-      `).join("");
-    }
-
-    function limparHistorico() {
-      localStorage.removeItem("historicoInsertosV3");
-      carregarHistorico();
-    }
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./service-worker.js");
-      });
-    }
-  </script>
+<div class="container">
+<h1>Controle de Insertos - Protótipo V3</h1>
+<div class="tabs">
+<button class="active" onclick="openTab('calcular', this)">Calcular</button>
+<button onclick="openTab('historico', this)">Histórico</button>
+<button onclick="openTab('broca', this)">Definir Broca</button>
+</div>
+<div id="calcular" class="tab active"><h2>Calcular</h2><p>Área existente do protótipo (placeholder).</p></div>
+<div id="historico" class="tab"><h2>Histórico</h2><p>Área existente do protótipo (placeholder).</p></div>
+<div id="broca" class="tab">
+<h2>Definir Broca</h2>
+<label>Diâmetro do furo (mm)</label><input id="diametroFuro" type="number" step="0.01">
+<label>Profundidade do furo (mm)</label><input id="profundidadeFuro" type="number" step="0.01">
+<label>Altura do friso (mm)</label><input id="alturaFriso" type="number" step="0.01">
+<label>Deslocamento maior em X (mm)</label><input id="deslocamentoX" type="number" step="0.01">
+<label>Diâmetro da camisa (mm)</label><input id="diametroCamisa" type="number" step="0.01">
+<button class="action" onclick="definirBroca()">Definir Broca</button>
+<div id="resultadoBroca" class="result"></div>
+</div>
+</div>
+<script>
+function openTab(id, btn){
+ document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+ document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ btn.classList.add('active');
+}
+const brocas = {16:{curta:153,longa:217},18:{curta:172.5,longa:244.5}};
+function definirBroca(){
+ const diametroFuro=Number(document.getElementById('diametroFuro').value);
+ const profundidade=Number(document.getElementById('profundidadeFuro').value);
+ const alturaFriso=Number(document.getElementById('alturaFriso').value);
+ const deslocamentoX=Number(document.getElementById('deslocamentoX').value);
+ if(!diametroFuro||!profundidade){document.getElementById('resultadoBroca').innerHTML='Preencha ao menos diâmetro e profundidade.';return;}
+ const brocaDiametro=diametroFuro<=16?16:18;
+ const necessario=profundidade+alturaFriso+deslocamentoX;
+ const dados=brocas[brocaDiametro];
+ let tipo='',limite=0,status='';
+ if(necessario<=dados.curta){tipo='Curta';limite=dados.curta;status='OK para operação';}
+ else if(necessario<=dados.longa){tipo='Longa';limite=dados.longa;status='OK para operação';}
+ else {tipo='Não atende';limite=dados.longa;status='Necessário buscar outra solução';}
+ document.getElementById('resultadoBroca').innerHTML=`<h3>Resultado</h3><p><strong>Broca recomendada:</strong> Ø${brocaDiametro} ${tipo}</p><p><strong>Comprimento necessário:</strong> ${necessario.toFixed(2)} mm</p><p><strong>Limite da broca:</strong> ${limite} mm</p><p><strong>Status:</strong> ${status}</p>`;
+}
+</script>
 </body>
 </html>
