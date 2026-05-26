@@ -1,4 +1,4 @@
-const CACHE_NAME = 'controle-insertos-v3-corrigido-20260526-02';
+const CACHE_NAME = 'controle-insertos-v3-formula-cnc-20260526-03';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {
