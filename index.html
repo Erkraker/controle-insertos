@@ -1,65 +1,279 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Insertos V3 Protótipo</title>
-<style>
-body{font-family:Arial,sans-serif;background:#f5f5f5;padding:20px}
-.container{max-width:900px;margin:auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.1)}
-.tabs button{padding:10px 16px;margin-right:8px;border:none;border-radius:8px;background:#ddd;cursor:pointer}
-.tabs button.active{background:#2563eb;color:#fff}
-.tab{display:none;margin-top:20px}
-.tab.active{display:block}
-input{display:block;width:100%;padding:10px;margin:8px 0 16px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
-.action{background:#16a34a;color:#fff;padding:12px;border:none;border-radius:8px;cursor:pointer}
-.result{margin-top:16px;padding:16px;background:#eef6ff;border-radius:8px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Insertos" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Controle de Insertos</title>
+  <style>
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { margin: 0; background: #f1f3f6; color: #1f2937; padding-bottom: env(safe-area-inset-bottom); }
+    header { background: #111827; color: white; padding: calc(18px + env(safe-area-inset-top)) 16px 18px; text-align: center; border-bottom-left-radius: 22px; border-bottom-right-radius: 22px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }
+    header h1 { margin: 0; font-size: 24px; }
+    header p { margin: 6px 0 0; font-size: 13px; color: #d1d5db; }
+    .app { max-width: 760px; margin: 0 auto; padding: 16px; }
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+    .tab-btn { padding: 12px; border: none; border-radius: 12px; background: #e5e7eb; font-weight: bold; color: #374151; cursor: pointer; margin-top: 0; }
+    .tab-btn.active { background: #111827; color: white; }
+    .card { background: white; padding: 16px; border-radius: 16px; box-shadow: 0 3px 12px rgba(0,0,0,0.08); margin-bottom: 14px; }
+    label { display: block; margin-top: 14px; font-weight: bold; font-size: 14px; }
+    input, textarea, button { width: 100%; padding: 12px; margin-top: 6px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 16px; }
+    textarea { min-height: 88px; resize: vertical; }
+    button { border: none; background: #111827; color: white; font-weight: bold; margin-top: 16px; cursor: pointer; }
+    button.secondary { background: #374151; }
+    button.light { background: #6b7280; }
+    button.danger { background: #b91c1c; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .result-box { background: #ecfdf5; border: 1px solid #bbf7d0; border-radius: 16px; padding: 16px; margin-top: 16px; }
+    .operator-report { background: #ffffff; border: 2px solid #111827; border-radius: 16px; padding: 16px; margin-top: 14px; }
+    .operator-report h3 { margin: 0 0 12px; font-size: 20px; }
+    .answer-line { padding: 10px 0; border-bottom: 1px solid #e5e7eb; font-size: 16px; }
+    .answer-line:last-child { border-bottom: none; }
+    .troca-item { background: #f9fafb; border-left: 5px solid #111827; padding: 10px; border-radius: 10px; margin-top: 8px; font-size: 15px; }
+    .insert-card { background: #ffffff; border: 1px solid #e5e7eb; border-left: 5px solid #111827; padding: 12px; border-radius: 12px; margin-top: 10px; }
+    .small { font-size: 13px; color: #6b7280; }
+    .hidden { display: none; }
+    .history-item { border-left: 5px solid #111827; padding: 12px; background: white; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .history-item h3 { margin: 0 0 6px; font-size: 17px; }
+    .badge { display: inline-block; padding: 5px 8px; background: #e5e7eb; border-radius: 999px; font-size: 12px; margin: 3px 3px 3px 0; }
+    .row-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+    .row-actions button { margin-top: 0; padding: 9px; font-size: 14px; }
+    @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .tabs { gap: 6px; } .tab-btn { font-size: 14px; padding: 10px 6px; } }
+  </style>
 </head>
 <body>
-<div class="container">
-<h1>Controle de Insertos - Protótipo V3</h1>
-<div class="tabs">
-<button class="active" onclick="openTab('calcular', this)">Calcular</button>
-<button onclick="openTab('historico', this)">Histórico</button>
-<button onclick="openTab('broca', this)">Definir Broca</button>
-</div>
-<div id="calcular" class="tab active"><h2>Calcular</h2><p>Área existente do protótipo (placeholder).</p></div>
-<div id="historico" class="tab"><h2>Histórico</h2><p>Área existente do protótipo (placeholder).</p></div>
-<div id="broca" class="tab">
-<h2>Definir Broca</h2>
-<label>Diâmetro do furo (mm)</label><input id="diametroFuro" type="number" step="0.01">
-<label>Profundidade do furo (mm)</label><input id="profundidadeFuro" type="number" step="0.01">
-<label>Altura do friso (mm)</label><input id="alturaFriso" type="number" step="0.01">
-<label>Deslocamento maior em X (mm)</label><input id="deslocamentoX" type="number" step="0.01">
-<label>Diâmetro da camisa (mm)</label><input id="diametroCamisa" type="number" step="0.01">
-<button class="action" onclick="definirBroca()">Definir Broca</button>
-<div id="resultadoBroca" class="result"></div>
-</div>
-</div>
-<script>
-function openTab(id, btn){
- document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
- document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
- document.getElementById(id).classList.add('active');
- btn.classList.add('active');
-}
-const brocas = {16:{curta:153,longa:217},18:{curta:172.5,longa:244.5}};
-function definirBroca(){
- const diametroFuro=Number(document.getElementById('diametroFuro').value);
- const profundidade=Number(document.getElementById('profundidadeFuro').value);
- const alturaFriso=Number(document.getElementById('alturaFriso').value);
- const deslocamentoX=Number(document.getElementById('deslocamentoX').value);
- if(!diametroFuro||!profundidade){document.getElementById('resultadoBroca').innerHTML='Preencha ao menos diâmetro e profundidade.';return;}
- const brocaDiametro=diametroFuro<=16?16:18;
- const necessario=profundidade+alturaFriso+deslocamentoX;
- const dados=brocas[brocaDiametro];
- let tipo='',limite=0,status='';
- if(necessario<=dados.curta){tipo='Curta';limite=dados.curta;status='OK para operação';}
- else if(necessario<=dados.longa){tipo='Longa';limite=dados.longa;status='OK para operação';}
- else {tipo='Não atende';limite=dados.longa;status='Necessário buscar outra solução';}
- document.getElementById('resultadoBroca').innerHTML=`<h3>Resultado</h3><p><strong>Broca recomendada:</strong> Ø${brocaDiametro} ${tipo}</p><p><strong>Comprimento necessário:</strong> ${necessario.toFixed(2)} mm</p><p><strong>Limite da broca:</strong> ${limite} mm</p><p><strong>Status:</strong> ${status}</p>`;
-}
-</script>
+  <header>
+    <h1>Controle de Insertos</h1>
+    <p>Cálculo simples por metragem, graus e rendimento</p>
+  </header>
+
+  <main class="app">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="abrirAba('calculo')">Calcular</button>
+      <button class="tab-btn" onclick="abrirAba('historico')">Histórico</button>
+    </div>
+
+    <section id="abaCalculo">
+      <div class="card">
+        <label>Nome da peça / moenda</label>
+        <input id="nomePeca" type="text" placeholder="Ex: Peça 01" />
+
+        <label>Comprimentos dos furos em mm</label>
+        <textarea id="comprimentos" placeholder="Ex: 50 50 70 72 75"></textarea>
+        <div class="small">Pode digitar separado por espaço, vírgula ou um por linha.</div>
+
+        <div class="grid2">
+          <div>
+            <label>Quantidade de furos</label>
+            <input id="quantidadeFuros" type="number" placeholder="Ex: 1500" />
+          </div>
+          <div>
+            <label>Vida segura do inserto novo</label>
+            <input id="vidaInserto" type="number" value="100" />
+          </div>
+        </div>
+
+        <label>Insertos disponíveis em metros</label>
+        <textarea id="insertos" placeholder="Exemplo:&#10;4,9&#10;50&#10;100"></textarea>
+        <div class="small">Digite a metragem disponível de cada inserto. Inserto novo = 100 m.</div>
+
+        <button onclick="calcular(false)">Calcular peça</button>
+        <button class="secondary" onclick="calcular(true)">Usar melhor combinação</button>
+        <button class="light" onclick="limparFormulario()">Limpar campos</button>
+      </div>
+
+      <div id="resultado"></div>
+    </section>
+
+    <section id="abaHistorico" class="hidden">
+      <div class="card">
+        <h2>Histórico salvo</h2>
+        <p class="small">Os cálculos ficam salvos neste aparelho.</p>
+        <button class="danger" onclick="limparHistorico()">Apagar histórico</button>
+      </div>
+      <div id="listaHistorico"></div>
+    </section>
+  </main>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+    }
+
+    let ultimoResultado = null;
+    const KEY_HISTORICO = 'historicoInsertos_v3_simples';
+
+    function numeroBR(valor, casas = 2) {
+      return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+    }
+
+    function lerNumeros(texto) {
+      return texto.replace(/,/g, '.').split(/\s+|;/).map(v => v.trim()).filter(v => v !== '').map(Number).filter(v => !isNaN(v) && v > 0);
+    }
+
+    function abrirAba(aba) {
+      document.getElementById('abaCalculo').classList.toggle('hidden', aba !== 'calculo');
+      document.getElementById('abaHistorico').classList.toggle('hidden', aba !== 'historico');
+
+      const botoes = document.querySelectorAll('.tab-btn');
+      botoes.forEach(btn => btn.classList.remove('active'));
+      if (aba === 'calculo') botoes[0].classList.add('active');
+      if (aba === 'historico') { botoes[1].classList.add('active'); carregarHistorico(); }
+    }
+
+    function getHistorico() {
+      try { return JSON.parse(localStorage.getItem(KEY_HISTORICO) || '[]'); } catch { return []; }
+    }
+
+    function setHistorico(lista) {
+      localStorage.setItem(KEY_HISTORICO, JSON.stringify(lista));
+    }
+
+    function melhorCombinacao(insertos, totalMetros, vidaInserto) {
+      const disponiveis = [...insertos].sort((a, b) => a - b);
+      const maxNovos = Math.ceil(totalMetros / vidaInserto) + 2;
+      let melhor = null;
+
+      function avaliar(combinacao) {
+        const soma = combinacao.reduce((a, b) => a + b, 0);
+        if (soma < totalMetros) return;
+        const sobra = soma - totalMetros;
+        const qtd = combinacao.length;
+        const menorSaldoUsado = Math.min(...combinacao);
+
+        if (!melhor || qtd < melhor.qtd || (qtd === melhor.qtd && sobra < melhor.sobra) || (qtd === melhor.qtd && sobra === melhor.sobra && menorSaldoUsado > melhor.menorSaldoUsado)) {
+          melhor = { combinacao, soma, sobra, qtd, menorSaldoUsado };
+        }
+      }
+
+      function gerarSubsets(index, atual) {
+        if (index === disponiveis.length) {
+          for (let novos = 0; novos <= maxNovos; novos++) {
+            const combinacao = [...atual];
+            for (let i = 0; i < novos; i++) combinacao.push(vidaInserto);
+            avaliar(combinacao);
+          }
+          return;
+        }
+        gerarSubsets(index + 1, atual);
+        gerarSubsets(index + 1, [...atual, disponiveis[index]]);
+      }
+
+      gerarSubsets(0, []);
+      if (!melhor) return [vidaInserto];
+      return melhor.combinacao.sort((a, b) => a - b);
+    }
+
+    function calcular(usarMelhorCombinacao) {
+      const nomePeca = document.getElementById('nomePeca').value.trim() || 'Peça sem nome';
+      const comprimentos = lerNumeros(document.getElementById('comprimentos').value);
+      const quantidadeFuros = Number(document.getElementById('quantidadeFuros').value);
+      const vidaInserto = Number(document.getElementById('vidaInserto').value) || 100;
+      let insertos = lerNumeros(document.getElementById('insertos').value);
+      const resultado = document.getElementById('resultado');
+
+      if (comprimentos.length === 0 || !quantidadeFuros || quantidadeFuros <= 0) {
+        resultado.innerHTML = '<div class="card">Preencha os comprimentos dos furos e a quantidade de furos.</div>';
+        return;
+      }
+
+      const mediaComprimento = comprimentos.reduce((a, b) => a + b, 0) / comprimentos.length;
+      const totalMetros = (mediaComprimento * quantidadeFuros) / 1000;
+      const grausPorMetro = 360 / totalMetros;
+
+      if (insertos.length === 0) insertos = [vidaInserto];
+      if (usarMelhorCombinacao) {
+        insertos = melhorCombinacao(insertos, totalMetros, vidaInserto);
+        document.getElementById('insertos').value = insertos.map(v => String(v).replace('.', ',')).join('\n');
+      }
+
+      let metrosRestantesPeca = totalMetros;
+      let grauAcumulado = 0;
+      let insertosUsados = [];
+      let indiceInserto = 0;
+
+      function usarInserto(saldoInserto, nomeInserto) {
+        const metrosUsados = Math.min(saldoInserto, metrosRestantesPeca);
+        const grausRodados = metrosUsados * grausPorMetro;
+        const grauInicio = grauAcumulado;
+        grauAcumulado += grausRodados;
+        metrosRestantesPeca -= metrosUsados;
+        const sobra = saldoInserto - metrosUsados;
+        insertosUsados.push({ nome: nomeInserto, saldoInicial: saldoInserto, grausRodados, grauInicio, grauFinal: grauAcumulado, metrosUsados, sobra });
+      }
+
+      while (metrosRestantesPeca > 0 && indiceInserto < insertos.length) {
+        usarInserto(insertos[indiceInserto], `Inserto ${indiceInserto + 1} (${numeroBR(insertos[indiceInserto])} m)`);
+        indiceInserto++;
+      }
+
+      while (metrosRestantesPeca > 0) {
+        usarInserto(vidaInserto, `Inserto ${insertosUsados.length + 1} novo`);
+      }
+
+      const ultimoInserto = insertosUsados[insertosUsados.length - 1];
+      const sobraFinal = ultimoInserto.sobra;
+      const mensagemTroca = insertosUsados.length === 1 ? `Não há troca. O inserto faz a peça toda, ou seja, 360°, e ainda sobra ${numeroBR(sobraFinal)} m para uma próxima peça.` : `Precisa de ${insertosUsados.length} insertos. A troca acontece conforme os graus abaixo.`;
+
+      const linhasTroca = insertosUsados.map((item, index) => {
+        const ultimo = index === insertosUsados.length - 1;
+        const completa = ultimo && item.grauFinal >= 359.999;
+        const textoFinal = completa ? 'completa a peça' : `até ${numeroBR(item.grauFinal)}°`;
+        return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
+      }).join('');
+
+      const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><strong>${item.nome}</strong><br>Saldo inicial: ${numeroBR(item.saldoInicial)} m<br>Roda: ${numeroBR(item.grausRodados)}°<br>Trabalha de ${numeroBR(item.grauInicio)}° até ${numeroBR(item.grauFinal)}°<br>Consome: ${numeroBR(item.metrosUsados)} m<br>Sobra: ${numeroBR(item.sobra)} m</div>`).join('');
+
+      ultimoResultado = { data: new Date().toLocaleString('pt-BR'), nomePeca, mediaComprimento, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
+
+      resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2><span class="badge">Furos: ${quantidadeFuros}</span><span class="badge">Média: ${numeroBR(mediaComprimento)} mm</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span><div class="operator-report"><h3>Relatório do operador</h3><div class="answer-line"><strong>Quantos insertos preciso?</strong><br>${insertosUsados.length}</div><div class="answer-line"><strong>Trocas</strong>${linhasTroca}</div><div class="answer-line"><strong>Sobra</strong><br>${sobraFinal > 0 ? numeroBR(sobraFinal) + ' m para próxima peça' : 'Não sobra metragem'}</div></div><h3>Detalhamento técnico</h3><p><strong>Troca:</strong> ${mensagemTroca}</p>${cardsInsertos}<button onclick="salvarHistorico()">Salvar no histórico</button></div>`;
+    }
+
+    function salvarHistorico() {
+      if (!ultimoResultado) return;
+      const historico = getHistorico();
+      historico.unshift(ultimoResultado);
+      setHistorico(historico);
+      alert('Cálculo salvo no histórico.');
+    }
+
+    function carregarHistorico() {
+      const lista = document.getElementById('listaHistorico');
+      const historico = getHistorico();
+      if (historico.length === 0) { lista.innerHTML = '<div class="card">Nenhum cálculo salvo ainda.</div>'; return; }
+      lista.innerHTML = historico.map((item, index) => `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`).join('');
+    }
+
+    function apagarItemHistorico(index) {
+      const historico = getHistorico();
+      historico.splice(index, 1);
+      setHistorico(historico);
+      carregarHistorico();
+    }
+
+    function limparHistorico() {
+      if (confirm('Deseja apagar todo o histórico?')) {
+        localStorage.removeItem(KEY_HISTORICO);
+        localStorage.removeItem('historicoInsertos');
+        localStorage.removeItem('historicoInsertos_v2');
+        document.getElementById('listaHistorico').innerHTML = '<div class="card">Nenhum cálculo salvo ainda.</div>';
+      }
+    }
+
+    function limparFormulario() {
+      document.getElementById('nomePeca').value = '';
+      document.getElementById('comprimentos').value = '';
+      document.getElementById('quantidadeFuros').value = '';
+      document.getElementById('vidaInserto').value = '100';
+      document.getElementById('insertos').value = '';
+      document.getElementById('resultado').innerHTML = '';
+      ultimoResultado = null;
+    }
+  </script>
 </body>
 </html>
