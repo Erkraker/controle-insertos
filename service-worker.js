@@ -1,4 +1,4 @@
-const CACHE_NAME = 'controle-insertos-v1';
+const CACHE_NAME = 'controle-insertos-v3-20260526-01';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {
@@ -7,10 +7,16 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('activate', event => {
-  event.waitUntil(caches.keys().then(keys => Promise.all(keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null))));
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.map(key => key !== CACHE_NAME ? caches.delete(key) : null))
+    )
+  );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(caches.match(event.request).then(response => response || fetch(event.request)));
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
 });
