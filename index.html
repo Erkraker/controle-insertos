@@ -58,6 +58,39 @@ button.danger { background: #b91c1c; }
 .ocr-status { font-weight: bold; margin-top: 10px; }
 @media (max-width: 520px) { .ocr-actions { grid-template-columns: 1fr; } }
 
+
+.numeros-ocr {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.numero-chip {
+  width: auto;
+  padding: 9px 12px;
+  margin: 0;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #111827;
+  font-weight: bold;
+}
+.numero-chip.comp {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+.numero-chip.qtd {
+  background: #dbeafe;
+  border-color: #2563eb;
+}
+.selecao-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
@@ -85,7 +118,7 @@ button.danger { background: #b91c1c; }
 
 <div class="ocr-box">
   <strong>📷 Ler desenho por foto</strong>
-  <p class="small">Tire uma foto ou carregue uma imagem do desenho. O sistema tenta encontrar os comprimentos e a quantidade de furos. Depois confira antes de confirmar, porque OCR também tem seus dias de funcionário novo.</p>
+  <p class="small">Tire uma foto ou carregue uma imagem do desenho. O sistema encontra os números e você seleciona quais são comprimentos e qual é a quantidade.</p>
 
   <div class="ocr-actions">
     <button class="secondary" type="button" onclick="abrirCameraDesenho()">Tirar foto</button>
@@ -99,19 +132,26 @@ button.danger { background: #b91c1c; }
   <div id="statusOCR" class="ocr-status"></div>
 
   <div id="resultadoOCR" class="hidden">
-    <h3>Leitura encontrada</h3>
-    <div class="grid2">
-      <div>
-        <label>Comprimentos encontrados</label>
-        <textarea id="comprimentosEncontradosOCR" readonly></textarea>
-      </div>
-      <div>
-        <label>Quantidade encontrada</label>
-        <input id="quantidadeEncontradaOCR" readonly />
-      </div>
+    <h3>Números encontrados</h3>
+    <p class="small">
+      Clique uma vez no número para marcar como <strong>comprimento</strong>.
+      Clique duas vezes no número para marcar como <strong>quantidade</strong>.
+      Clique novamente para desmarcar. Sim, agora o operador manda no OCR, como deveria ter sido desde o começo.
+    </p>
+
+    <div id="listaNumerosOCR" class="numeros-ocr"></div>
+
+    <div class="selecao-box">
+      <strong>Comprimentos selecionados</strong>
+      <textarea id="comprimentosEncontradosOCR"></textarea>
+
+      <strong>Quantidade selecionada</strong>
+      <input id="quantidadeEncontradaOCR" />
+
+      <button type="button" onclick="aplicarLeituraOCR()">Confirmar seleção e calcular</button>
+      <button class="light" type="button" onclick="limparSelecaoOCR()">Limpar seleção</button>
     </div>
 
-    <button type="button" onclick="aplicarLeituraOCR()">Confirmar e preencher cálculo</button>
     <button class="light" type="button" onclick="toggleTextoOCR()">Ver texto lido</button>
     <div id="textoOCRBox" class="hidden">
       <label>Texto bruto reconhecido</label>
@@ -207,6 +247,12 @@ return texto.replace(/,/g, '.').split(/\s+|;/).map(v => v.trim()).filter(v => v 
 
 let ultimaLeituraOCR = {
 texto: '',
+numeros: [],
+comprimentos: [],
+quantidade: null
+};
+
+let ocrSelecionados = {
 comprimentos: [],
 quantidade: null
 };
@@ -224,8 +270,17 @@ if (!valor) return null;
 let texto = String(valor).trim();
 texto = texto.replace(/[Oo]/g, '0');
 texto = texto.replace(/,/g, '.');
+texto = texto.replace(/[^\d.]/g, '');
+const partes = texto.split('.');
+if (partes.length > 2) {
+texto = partes.shift() + '.' + partes.join('');
+}
 const numero = Number(texto);
 return isNaN(numero) ? null : numero;
+}
+
+function formatarNumeroCampo(n) {
+return String(n).replace('.', ',');
 }
 
 function extrairDadosDoTextoOCR(texto) {
@@ -236,69 +291,28 @@ const limpo = texto
 .replace(/\s+/g, ' ')
 .trim();
 
-const linhas = texto
-.replace(/[Oo]/g, '0')
-.replace(/,/g, '.')
-.split(/\n+/)
-.map(l => l.trim())
-.filter(Boolean);
-
-let quantidade = null;
-
-// Prioridade: padrões com FURO / FUROS / QTD / QTDE / QUANTIDADE
-const padroesQuantidade = [
-/(?:QTD|QTDE|QUANTIDADE)\D{0,15}(\d{2,5})/i,
-/(\d{2,5})\D{0,12}(?:FURO|FUROS)/i,
-/(?:FURO|FUROS)\D{0,12}(\d{2,5})/i
-];
-
-for (const padrao of padroesQuantidade) {
-const m = limpo.match(padrao);
-if (m) {
-quantidade = Number(m[1]);
-break;
-}
-}
-
-// Se não achou por texto, tenta número grande típico de quantidade em desenho.
-if (!quantidade) {
-const numsGrandes = [...limpo.matchAll(/\b\d{3,5}\b/g)]
-.map(m => Number(m[0]))
-.filter(n => n >= 100 && n <= 5000);
-if (numsGrandes.length) {
-quantidade = numsGrandes.sort((a, b) => b - a)[0];
-}
-}
-
-// Extrai números candidatos para comprimento de furo.
-// Faixa inicial pensada para comprimentos do desenho: 20 a 250 mm.
-// Filtra diâmetro 16/18, códigos grandes, quantidade, ano, etc.
-let candidatos = [...limpo.matchAll(/\b\d{1,3}(?:\.\d{1,3})?\b/g)]
+let numeros = [...limpo.matchAll(/\b\d{1,5}(?:\.\d{1,3})?\b/g)]
 .map(m => normalizarNumeroOCR(m[0]))
 .filter(n => n !== null)
-.filter(n => n >= 20 && n <= 250)
-.filter(n => n !== 32)
-.filter(n => n !== 16 && n !== 18)
-.filter(n => !quantidade || n !== quantidade);
+.filter(n => n > 0);
 
-// Remove duplicados muito próximos, mantendo ordem.
-let comprimentos = [];
-for (const n of candidatos) {
-if (!comprimentos.some(x => Math.abs(x - n) < 0.05)) {
-comprimentos.push(n);
+// remove duplicados mantendo ordem
+let unicos = [];
+for (const n of numeros) {
+if (!unicos.some(x => Math.abs(x - n) < 0.05)) {
+unicos.push(n);
 }
 }
 
-// Heurística para desenho de moenda: se aparecerem muitos números, prioriza os que têm cara de cota de comprimento.
-// Mantém até 12 números para não encher o campo com lixo.
-if (comprimentos.length > 12) {
-comprimentos = comprimentos.filter(n => n >= 45 && n <= 120);
-}
-if (comprimentos.length > 12) {
-comprimentos = comprimentos.slice(0, 12);
-}
+// prioriza números mais úteis, mas mostra bastante coisa para o operador decidir
+let uteis = unicos.filter(n =>
+(n >= 20 && n <= 250) || (n >= 100 && n <= 5000) || n === 16 || n === 18
+);
 
-return { texto: limpo, comprimentos, quantidade };
+if (!uteis.length) uteis = unicos.slice(0, 40);
+if (uteis.length > 60) uteis = uteis.slice(0, 60);
+
+return { texto: limpo, numeros: uteis, comprimentos: [], quantidade: null };
 }
 
 async function processarImagemDesenho(event) {
@@ -312,9 +326,10 @@ const textoBox = document.getElementById('textoOCRBox');
 
 preview.src = URL.createObjectURL(arquivo);
 preview.style.display = 'block';
-status.innerHTML = 'Lendo desenho... isso pode demorar alguns segundos.';
+status.innerHTML = 'Lendo desenho... pode demorar alguns segundos.';
 resultado.classList.add('hidden');
 textoBox.classList.add('hidden');
+limparSelecaoOCR(false);
 
 try {
 if (typeof Tesseract === 'undefined') {
@@ -335,14 +350,13 @@ const texto = leitura.data.text || '';
 const dados = extrairDadosDoTextoOCR(texto);
 ultimaLeituraOCR = dados;
 
-document.getElementById('comprimentosEncontradosOCR').value = dados.comprimentos.map(n => String(n).replace('.', ',')).join('\n');
-document.getElementById('quantidadeEncontradaOCR').value = dados.quantidade || '';
 document.getElementById('textoOCR').textContent = texto.trim() || '(nenhum texto reconhecido)';
+renderizarNumerosOCR(dados.numeros);
 
-if (!dados.comprimentos.length && !dados.quantidade) {
-status.innerHTML = 'Não consegui encontrar os dados principais. Tente foto mais nítida, mais reta e com melhor luz.';
+if (!dados.numeros.length) {
+status.innerHTML = 'Não encontrei números úteis. Tente uma foto mais nítida, reta e com boa luz.';
 } else {
-status.innerHTML = `Leitura concluída. Confira antes de confirmar.`;
+status.innerHTML = 'Leitura concluída. Agora selecione os comprimentos e a quantidade.';
 resultado.classList.remove('hidden');
 }
 } catch (erro) {
@@ -351,20 +365,111 @@ console.error(erro);
 }
 }
 
+function renderizarNumerosOCR(numeros) {
+const lista = document.getElementById('listaNumerosOCR');
+lista.innerHTML = '';
+
+numeros.forEach((numero, index) => {
+const btn = document.createElement('button');
+btn.type = 'button';
+btn.className = 'numero-chip';
+btn.textContent = formatarNumeroCampo(numero);
+btn.dataset.numero = numero;
+btn.dataset.estado = '';
+
+btn.onclick = () => alternarNumeroOCR(btn, numero);
+
+lista.appendChild(btn);
+});
+}
+
+function alternarNumeroOCR(botao, numero) {
+const estado = botao.dataset.estado || '';
+
+if (estado === '') {
+botao.dataset.estado = 'comp';
+botao.classList.add('comp');
+adicionarComprimentoOCR(numero);
+} else if (estado === 'comp') {
+botao.dataset.estado = 'qtd';
+botao.classList.remove('comp');
+botao.classList.add('qtd');
+removerComprimentoOCR(numero);
+definirQuantidadeOCR(numero);
+desmarcarOutrasQuantidades(botao);
+} else {
+botao.dataset.estado = '';
+botao.classList.remove('qtd');
+if (ocrSelecionados.quantidade === numero) {
+ocrSelecionados.quantidade = null;
+document.getElementById('quantidadeEncontradaOCR').value = '';
+}
+}
+
+atualizarCamposSelecaoOCR();
+}
+
+function adicionarComprimentoOCR(numero) {
+if (!ocrSelecionados.comprimentos.some(n => Math.abs(n - numero) < 0.05)) {
+ocrSelecionados.comprimentos.push(numero);
+}
+}
+
+function removerComprimentoOCR(numero) {
+ocrSelecionados.comprimentos = ocrSelecionados.comprimentos.filter(n => Math.abs(n - numero) >= 0.05);
+}
+
+function definirQuantidadeOCR(numero) {
+ocrSelecionados.quantidade = numero;
+}
+
+function desmarcarOutrasQuantidades(botaoAtual) {
+document.querySelectorAll('.numero-chip.qtd').forEach(btn => {
+if (btn !== botaoAtual) {
+btn.classList.remove('qtd');
+btn.dataset.estado = '';
+}
+});
+}
+
+function atualizarCamposSelecaoOCR() {
+document.getElementById('comprimentosEncontradosOCR').value =
+ocrSelecionados.comprimentos.map(formatarNumeroCampo).join('\n');
+
+document.getElementById('quantidadeEncontradaOCR').value =
+ocrSelecionados.quantidade ? formatarNumeroCampo(ocrSelecionados.quantidade) : '';
+}
+
+function limparSelecaoOCR(limparBotoes = true) {
+ocrSelecionados = { comprimentos: [], quantidade: null };
+
+const comp = document.getElementById('comprimentosEncontradosOCR');
+const qtd = document.getElementById('quantidadeEncontradaOCR');
+if (comp) comp.value = '';
+if (qtd) qtd.value = '';
+
+if (limparBotoes) {
+document.querySelectorAll('.numero-chip').forEach(btn => {
+btn.dataset.estado = '';
+btn.classList.remove('comp', 'qtd');
+});
+}
+}
+
 function aplicarLeituraOCR() {
 const comprimentos = document.getElementById('comprimentosEncontradosOCR').value.trim();
 const quantidade = document.getElementById('quantidadeEncontradaOCR').value.trim();
 
-if (comprimentos) {
-document.getElementById('comprimentos').value = comprimentos;
-}
-if (quantidade) {
-document.getElementById('quantidadeFuros').value = quantidade;
+if (!comprimentos || !quantidade) {
+alert('Selecione pelo menos um comprimento e uma quantidade antes de confirmar.');
+return;
 }
 
-if (comprimentos && quantidade) {
+document.getElementById('comprimentos').value = comprimentos;
+document.getElementById('quantidadeFuros').value = quantidade.replace(',', '.');
+
 calcular(false);
-}
+abrirAba('calculo');
 }
 
 function toggleTextoOCR() {

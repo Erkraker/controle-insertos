@@ -1,4 +1,4 @@
-const CACHE_NAME = 'controle-insertos-v4-ocr-20260526-01';
+const CACHE_NAME = 'controle-insertos-v5-ocr-assistido-20260526-01';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {
