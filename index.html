@@ -282,13 +282,13 @@ resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2><span class="
 function definirBroca() {
 const diametroFuro = Number(String(document.getElementById('diametroFuro').value).replace(',', '.'));
 const profundidade = Number(String(document.getElementById('profundidadeFuro').value).replace(',', '.'));
-const alturaFriso = Number(String(document.getElementById('alturaFriso').value).replace(',', '.')) || 0;
-const deslocamentoX = Number(String(document.getElementById('deslocamentoX').value).replace(',', '.')) || 0;
-const diametroCamisa = Number(String(document.getElementById('diametroCamisa').value).replace(',', '.')) || 0;
+const alturaFriso = Number(String(document.getElementById('alturaFriso').value).replace(',', '.'));
+const deslocamentoX = Number(String(document.getElementById('deslocamentoX').value).replace(',', '.'));
+const diametroCamisa = Number(String(document.getElementById('diametroCamisa').value).replace(',', '.'));
 const resultadoBroca = document.getElementById('resultadoBroca');
 
-if (!diametroFuro || !profundidade) {
-resultadoBroca.innerHTML = '<div class="card">Preencha pelo menos o diâmetro do furo e a profundidade.</div>';
+if (!diametroFuro || !profundidade || !alturaFriso || !deslocamentoX || !diametroCamisa) {
+resultadoBroca.innerHTML = '<div class="card">Preencha todos os campos para definir a broca.</div>';
 return;
 }
 
@@ -297,18 +297,32 @@ const tabelaBrocas = {
 18: { curta: 172.5, longa: 244.5 }
 };
 
+// Cálculo baseado na lógica do CNC, mas sem mostrar R0/R1/R2 na tela.
+const raioCamisa = diametroCamisa / 2;
+const raioSuporte = 32;
+const deslocamentoCorrigido = deslocamentoX - raioSuporte;
+const raioBaseFriso = raioCamisa - alturaFriso;
+
+const parteSuperior = Math.pow(raioCamisa, 2) - Math.pow(deslocamentoCorrigido, 2);
+const parteInferior = Math.pow(raioBaseFriso, 2) - Math.pow(deslocamentoX - diametroFuro / 2, 2);
+
+if (parteSuperior < 0 || parteInferior < 0) {
+resultadoBroca.innerHTML = '<div class="card broca-alerta"><h2>Não foi possível calcular</h2><p>Confira as medidas informadas. Alguma medida ficou fora da geometria da camisa.</p></div>';
+return;
+}
+
+const medidaCalculada = Math.sqrt(parteSuperior) - Math.sqrt(parteInferior) + profundidade;
 const brocaDiametro = diametroFuro <= 16 ? 16 : 18;
 const dados = tabelaBrocas[brocaDiametro];
-const comprimentoNecessario = profundidade + alturaFriso + deslocamentoX;
 
 let tipo = '';
 let limite = 0;
 let atende = true;
 
-if (comprimentoNecessario <= dados.curta) {
+if (medidaCalculada <= dados.curta) {
 tipo = 'Curta';
 limite = dados.curta;
-} else if (comprimentoNecessario <= dados.longa) {
+} else if (medidaCalculada <= dados.longa) {
 tipo = 'Longa';
 limite = dados.longa;
 } else {
@@ -317,7 +331,7 @@ limite = dados.longa;
 atende = false;
 }
 
-const folga = limite - comprimentoNecessario;
+const folga = limite - medidaCalculada;
 const status = atende ? 'OK para operação' : 'Não atende com as brocas cadastradas';
 
 ultimoResultadoBroca = {
@@ -330,13 +344,13 @@ deslocamentoX,
 diametroCamisa,
 brocaDiametro,
 brocaTipo: tipo,
-comprimentoNecessario,
+comprimentoNecessario: medidaCalculada,
 limite,
 folga,
 status
 };
 
-resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Comprimento necessário:</strong> ${numeroBR(comprimentoNecessario)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Diâmetro da camisa:</strong> ${diametroCamisa ? numeroBR(diametroCamisa) + ' mm' : '-'}</p><p><strong>Status:</strong> ${status}</p></div>`;
+resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Medida calculada:</strong> ${numeroBR(medidaCalculada)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Status:</strong> ${status}</p></div>`;
 }
 
 function salvarHistorico() {
@@ -366,7 +380,7 @@ if (historico.length === 0) { lista.innerHTML = '<div class="card">Nenhum cálcu
 
 lista.innerHTML = historico.map((item, index) => {
 if (item.tipo === 'broca') {
-return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Necessário: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }
 
 return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
