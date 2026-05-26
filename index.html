@@ -50,54 +50,12 @@ button.danger { background: #b91c1c; }
   .tabs { gap: 6px; }
   .tab-btn { font-size: 13px; padding: 10px 6px; }
 }
-
-.ocr-box { background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 16px; padding: 14px; margin-top: 14px; }
-.ocr-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.ocr-preview { max-width: 100%; border-radius: 12px; margin-top: 12px; display: none; border: 1px solid #e5e7eb; }
-.ocr-text { white-space: pre-wrap; background: #111827; color: #e5e7eb; padding: 12px; border-radius: 12px; font-family: monospace; font-size: 13px; max-height: 220px; overflow: auto; }
-.ocr-status { font-weight: bold; margin-top: 10px; }
-@media (max-width: 520px) { .ocr-actions { grid-template-columns: 1fr; } }
-
-
-.numeros-ocr {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-.numero-chip {
-  width: auto;
-  padding: 9px 12px;
-  margin: 0;
-  border-radius: 999px;
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  color: #111827;
-  font-weight: bold;
-}
-.numero-chip.comp {
-  background: #dcfce7;
-  border-color: #22c55e;
-}
-.numero-chip.qtd {
-  background: #dbeafe;
-  border-color: #2563eb;
-}
-.selecao-box {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px;
-  margin-top: 12px;
-}
-
 </style>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
 <header>
 <h1>Controle de Insertos</h1>
-<p>Cálculo por metragem, definição de broca e leitura por foto</p>
+<p>Cálculo simples por metragem, graus e rendimento</p>
 </header>
 
 <main class="app">
@@ -115,50 +73,6 @@ button.danger { background: #b91c1c; }
 <label>Comprimentos dos furos em mm</label>
 <textarea id="comprimentos" placeholder="Ex: 50 50 70 72 75"></textarea>
 <div class="small">Pode digitar separado por espaço, vírgula ou um por linha.</div>
-
-<div class="ocr-box">
-  <strong>📷 Ler desenho por foto</strong>
-  <p class="small">Tire uma foto ou carregue uma imagem do desenho. O sistema encontra os números e você seleciona quais são comprimentos e qual é a quantidade.</p>
-
-  <div class="ocr-actions">
-    <button class="secondary" type="button" onclick="abrirCameraDesenho()">Tirar foto</button>
-    <button class="light" type="button" onclick="abrirUploadDesenho()">Carregar imagem</button>
-  </div>
-
-  <input id="inputCameraDesenho" type="file" accept="image/*" capture="environment" style="display:none" onchange="processarImagemDesenho(event)" />
-  <input id="inputUploadDesenho" type="file" accept="image/*" style="display:none" onchange="processarImagemDesenho(event)" />
-
-  <img id="previewDesenho" class="ocr-preview" alt="Prévia do desenho" />
-  <div id="statusOCR" class="ocr-status"></div>
-
-  <div id="resultadoOCR" class="hidden">
-    <h3>Números encontrados</h3>
-    <p class="small">
-      Clique uma vez no número para marcar como <strong>comprimento</strong>.
-      Clique duas vezes no número para marcar como <strong>quantidade</strong>.
-      Clique novamente para desmarcar. Sim, agora o operador manda no OCR, como deveria ter sido desde o começo.
-    </p>
-
-    <div id="listaNumerosOCR" class="numeros-ocr"></div>
-
-    <div class="selecao-box">
-      <strong>Comprimentos selecionados</strong>
-      <textarea id="comprimentosEncontradosOCR"></textarea>
-
-      <strong>Quantidade selecionada</strong>
-      <input id="quantidadeEncontradaOCR" />
-
-      <button type="button" onclick="aplicarLeituraOCR()">Confirmar seleção e calcular</button>
-      <button class="light" type="button" onclick="limparSelecaoOCR()">Limpar seleção</button>
-    </div>
-
-    <button class="light" type="button" onclick="toggleTextoOCR()">Ver texto lido</button>
-    <div id="textoOCRBox" class="hidden">
-      <label>Texto bruto reconhecido</label>
-      <div id="textoOCR" class="ocr-text"></div>
-    </div>
-  </div>
-</div>
 
 <div class="grid2">
 <div>
@@ -242,238 +156,6 @@ return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: casas, max
 
 function lerNumeros(texto) {
 return texto.replace(/,/g, '.').split(/\s+|;/).map(v => v.trim()).filter(v => v !== '').map(Number).filter(v => !isNaN(v) && v > 0);
-}
-
-
-let ultimaLeituraOCR = {
-texto: '',
-numeros: [],
-comprimentos: [],
-quantidade: null
-};
-
-let ocrSelecionados = {
-comprimentos: [],
-quantidade: null
-};
-
-function abrirCameraDesenho() {
-document.getElementById('inputCameraDesenho').click();
-}
-
-function abrirUploadDesenho() {
-document.getElementById('inputUploadDesenho').click();
-}
-
-function normalizarNumeroOCR(valor) {
-if (!valor) return null;
-let texto = String(valor).trim();
-texto = texto.replace(/[Oo]/g, '0');
-texto = texto.replace(/,/g, '.');
-texto = texto.replace(/[^\d.]/g, '');
-const partes = texto.split('.');
-if (partes.length > 2) {
-texto = partes.shift() + '.' + partes.join('');
-}
-const numero = Number(texto);
-return isNaN(numero) ? null : numero;
-}
-
-function formatarNumeroCampo(n) {
-return String(n).replace('.', ',');
-}
-
-function extrairDadosDoTextoOCR(texto) {
-const limpo = texto
-.replace(/[|]/g, ' ')
-.replace(/[Oo]/g, '0')
-.replace(/,/g, '.')
-.replace(/\s+/g, ' ')
-.trim();
-
-let numeros = [...limpo.matchAll(/\b\d{1,5}(?:\.\d{1,3})?\b/g)]
-.map(m => normalizarNumeroOCR(m[0]))
-.filter(n => n !== null)
-.filter(n => n > 0);
-
-// remove duplicados mantendo ordem
-let unicos = [];
-for (const n of numeros) {
-if (!unicos.some(x => Math.abs(x - n) < 0.05)) {
-unicos.push(n);
-}
-}
-
-// prioriza números mais úteis, mas mostra bastante coisa para o operador decidir
-let uteis = unicos.filter(n =>
-(n >= 20 && n <= 250) || (n >= 100 && n <= 5000) || n === 16 || n === 18
-);
-
-if (!uteis.length) uteis = unicos.slice(0, 40);
-if (uteis.length > 60) uteis = uteis.slice(0, 60);
-
-return { texto: limpo, numeros: uteis, comprimentos: [], quantidade: null };
-}
-
-async function processarImagemDesenho(event) {
-const arquivo = event.target.files && event.target.files[0];
-if (!arquivo) return;
-
-const preview = document.getElementById('previewDesenho');
-const status = document.getElementById('statusOCR');
-const resultado = document.getElementById('resultadoOCR');
-const textoBox = document.getElementById('textoOCRBox');
-
-preview.src = URL.createObjectURL(arquivo);
-preview.style.display = 'block';
-status.innerHTML = 'Lendo desenho... pode demorar alguns segundos.';
-resultado.classList.add('hidden');
-textoBox.classList.add('hidden');
-limparSelecaoOCR(false);
-
-try {
-if (typeof Tesseract === 'undefined') {
-status.innerHTML = 'OCR não carregou. Verifique a internet e tente novamente.';
-return;
-}
-
-const leitura = await Tesseract.recognize(arquivo, 'por+eng', {
-logger: m => {
-if (m.status === 'recognizing text') {
-const pct = Math.round((m.progress || 0) * 100);
-status.innerHTML = `Lendo texto do desenho... ${pct}%`;
-}
-}
-});
-
-const texto = leitura.data.text || '';
-const dados = extrairDadosDoTextoOCR(texto);
-ultimaLeituraOCR = dados;
-
-document.getElementById('textoOCR').textContent = texto.trim() || '(nenhum texto reconhecido)';
-renderizarNumerosOCR(dados.numeros);
-
-if (!dados.numeros.length) {
-status.innerHTML = 'Não encontrei números úteis. Tente uma foto mais nítida, reta e com boa luz.';
-} else {
-status.innerHTML = 'Leitura concluída. Agora selecione os comprimentos e a quantidade.';
-resultado.classList.remove('hidden');
-}
-} catch (erro) {
-status.innerHTML = 'Erro ao ler a imagem. Tente novamente com outra foto.';
-console.error(erro);
-}
-}
-
-function renderizarNumerosOCR(numeros) {
-const lista = document.getElementById('listaNumerosOCR');
-lista.innerHTML = '';
-
-numeros.forEach((numero, index) => {
-const btn = document.createElement('button');
-btn.type = 'button';
-btn.className = 'numero-chip';
-btn.textContent = formatarNumeroCampo(numero);
-btn.dataset.numero = numero;
-btn.dataset.estado = '';
-
-btn.onclick = () => alternarNumeroOCR(btn, numero);
-
-lista.appendChild(btn);
-});
-}
-
-function alternarNumeroOCR(botao, numero) {
-const estado = botao.dataset.estado || '';
-
-if (estado === '') {
-botao.dataset.estado = 'comp';
-botao.classList.add('comp');
-adicionarComprimentoOCR(numero);
-} else if (estado === 'comp') {
-botao.dataset.estado = 'qtd';
-botao.classList.remove('comp');
-botao.classList.add('qtd');
-removerComprimentoOCR(numero);
-definirQuantidadeOCR(numero);
-desmarcarOutrasQuantidades(botao);
-} else {
-botao.dataset.estado = '';
-botao.classList.remove('qtd');
-if (ocrSelecionados.quantidade === numero) {
-ocrSelecionados.quantidade = null;
-document.getElementById('quantidadeEncontradaOCR').value = '';
-}
-}
-
-atualizarCamposSelecaoOCR();
-}
-
-function adicionarComprimentoOCR(numero) {
-if (!ocrSelecionados.comprimentos.some(n => Math.abs(n - numero) < 0.05)) {
-ocrSelecionados.comprimentos.push(numero);
-}
-}
-
-function removerComprimentoOCR(numero) {
-ocrSelecionados.comprimentos = ocrSelecionados.comprimentos.filter(n => Math.abs(n - numero) >= 0.05);
-}
-
-function definirQuantidadeOCR(numero) {
-ocrSelecionados.quantidade = numero;
-}
-
-function desmarcarOutrasQuantidades(botaoAtual) {
-document.querySelectorAll('.numero-chip.qtd').forEach(btn => {
-if (btn !== botaoAtual) {
-btn.classList.remove('qtd');
-btn.dataset.estado = '';
-}
-});
-}
-
-function atualizarCamposSelecaoOCR() {
-document.getElementById('comprimentosEncontradosOCR').value =
-ocrSelecionados.comprimentos.map(formatarNumeroCampo).join('\n');
-
-document.getElementById('quantidadeEncontradaOCR').value =
-ocrSelecionados.quantidade ? formatarNumeroCampo(ocrSelecionados.quantidade) : '';
-}
-
-function limparSelecaoOCR(limparBotoes = true) {
-ocrSelecionados = { comprimentos: [], quantidade: null };
-
-const comp = document.getElementById('comprimentosEncontradosOCR');
-const qtd = document.getElementById('quantidadeEncontradaOCR');
-if (comp) comp.value = '';
-if (qtd) qtd.value = '';
-
-if (limparBotoes) {
-document.querySelectorAll('.numero-chip').forEach(btn => {
-btn.dataset.estado = '';
-btn.classList.remove('comp', 'qtd');
-});
-}
-}
-
-function aplicarLeituraOCR() {
-const comprimentos = document.getElementById('comprimentosEncontradosOCR').value.trim();
-const quantidade = document.getElementById('quantidadeEncontradaOCR').value.trim();
-
-if (!comprimentos || !quantidade) {
-alert('Selecione pelo menos um comprimento e uma quantidade antes de confirmar.');
-return;
-}
-
-document.getElementById('comprimentos').value = comprimentos;
-document.getElementById('quantidadeFuros').value = quantidade.replace(',', '.');
-
-calcular(false);
-abrirAba('calculo');
-}
-
-function toggleTextoOCR() {
-document.getElementById('textoOCRBox').classList.toggle('hidden');
 }
 
 function abrirAba(aba) {
@@ -600,13 +282,13 @@ resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2><span class="
 function definirBroca() {
 const diametroFuro = Number(String(document.getElementById('diametroFuro').value).replace(',', '.'));
 const profundidade = Number(String(document.getElementById('profundidadeFuro').value).replace(',', '.'));
-const alturaFriso = Number(String(document.getElementById('alturaFriso').value).replace(',', '.')) || 0;
-const deslocamentoX = Number(String(document.getElementById('deslocamentoX').value).replace(',', '.')) || 0;
-const diametroCamisa = Number(String(document.getElementById('diametroCamisa').value).replace(',', '.')) || 0;
+const alturaFriso = Number(String(document.getElementById('alturaFriso').value).replace(',', '.'));
+const deslocamentoX = Number(String(document.getElementById('deslocamentoX').value).replace(',', '.'));
+const diametroCamisa = Number(String(document.getElementById('diametroCamisa').value).replace(',', '.'));
 const resultadoBroca = document.getElementById('resultadoBroca');
 
-if (!diametroFuro || !profundidade) {
-resultadoBroca.innerHTML = '<div class="card">Preencha pelo menos o diâmetro do furo e a profundidade.</div>';
+if (!diametroFuro || !profundidade || !alturaFriso || !deslocamentoX || !diametroCamisa) {
+resultadoBroca.innerHTML = '<div class="card">Preencha todos os campos para definir a broca.</div>';
 return;
 }
 
@@ -615,18 +297,32 @@ const tabelaBrocas = {
 18: { curta: 172.5, longa: 244.5 }
 };
 
+// Cálculo baseado na lógica do CNC, mas sem mostrar R0/R1/R2 na tela.
+const raioCamisa = diametroCamisa / 2;
+const raioSuporte = 32;
+const deslocamentoCorrigido = deslocamentoX - raioSuporte;
+const raioBaseFriso = raioCamisa - alturaFriso;
+
+const parteSuperior = Math.pow(raioCamisa, 2) - Math.pow(deslocamentoCorrigido, 2);
+const parteInferior = Math.pow(raioBaseFriso, 2) - Math.pow(deslocamentoX - diametroFuro / 2, 2);
+
+if (parteSuperior < 0 || parteInferior < 0) {
+resultadoBroca.innerHTML = '<div class="card broca-alerta"><h2>Não foi possível calcular</h2><p>Confira as medidas informadas. Alguma medida ficou fora da geometria da camisa.</p></div>';
+return;
+}
+
+const medidaCalculada = Math.sqrt(parteSuperior) - Math.sqrt(parteInferior) + profundidade;
 const brocaDiametro = diametroFuro <= 16 ? 16 : 18;
 const dados = tabelaBrocas[brocaDiametro];
-const comprimentoNecessario = profundidade + alturaFriso + deslocamentoX;
 
 let tipo = '';
 let limite = 0;
 let atende = true;
 
-if (comprimentoNecessario <= dados.curta) {
+if (medidaCalculada <= dados.curta) {
 tipo = 'Curta';
 limite = dados.curta;
-} else if (comprimentoNecessario <= dados.longa) {
+} else if (medidaCalculada <= dados.longa) {
 tipo = 'Longa';
 limite = dados.longa;
 } else {
@@ -635,7 +331,7 @@ limite = dados.longa;
 atende = false;
 }
 
-const folga = limite - comprimentoNecessario;
+const folga = limite - medidaCalculada;
 const status = atende ? 'OK para operação' : 'Não atende com as brocas cadastradas';
 
 ultimoResultadoBroca = {
@@ -648,13 +344,13 @@ deslocamentoX,
 diametroCamisa,
 brocaDiametro,
 brocaTipo: tipo,
-comprimentoNecessario,
+comprimentoNecessario: medidaCalculada,
 limite,
 folga,
 status
 };
 
-resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Comprimento necessário:</strong> ${numeroBR(comprimentoNecessario)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Diâmetro da camisa:</strong> ${diametroCamisa ? numeroBR(diametroCamisa) + ' mm' : '-'}</p><p><strong>Status:</strong> ${status}</p></div>`;
+resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Medida calculada:</strong> ${numeroBR(medidaCalculada)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Status:</strong> ${status}</p></div>`;
 }
 
 function salvarHistorico() {
@@ -684,7 +380,7 @@ if (historico.length === 0) { lista.innerHTML = '<div class="card">Nenhum cálcu
 
 lista.innerHTML = historico.map((item, index) => {
 if (item.tipo === 'broca') {
-return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Necessário: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }
 
 return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
