@@ -41,7 +41,7 @@ button.danger { background: #b91c1c; }
 .history-item { border-left: 5px solid #111827; padding: 12px; background: white; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
 .history-item h3 { margin: 0 0 6px; font-size: 17px; }
 .badge { display: inline-block; padding: 5px 8px; background: #e5e7eb; border-radius: 999px; font-size: 12px; margin: 3px 3px 3px 0; }
-.row-actions { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px; }
+.row-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .row-actions button { margin-top: 0; padding: 9px; font-size: 14px; }
 .broca-ok { background: #ecfdf5; border-color: #bbf7d0; }
 .broca-alerta { background: #fef2f2; border-color: #fecaca; }
@@ -255,6 +255,10 @@ const vidaInserto = Number(document.getElementById('vidaInserto').value) || 100;
 let insertos = lerNumeros(document.getElementById('insertos').value);
 const resultado = document.getElementById('resultado');
 
+const comprimentosTexto = document.getElementById('comprimentos').value;
+const insertosTexto = document.getElementById('insertos').value;
+const metragemDireta = document.getElementById('metragemDireta') ? document.getElementById('metragemDireta').value : '';
+
 let mediaComprimento = 0;
 let totalMetros = 0;
 
@@ -334,7 +338,28 @@ return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
 
 const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><strong>${item.nome}</strong><br>Saldo inicial: ${numeroBR(item.saldoInicial)} m<br>Roda: ${numeroBR(item.grausRodados)}°<br>Trabalha de ${numeroBR(item.grauInicio)}° até ${numeroBR(item.grauFinal)}°<br>Consome: ${numeroBR(item.metrosUsados)} m<br>Sobra: ${numeroBR(item.sobra)} m</div>`).join('');
 
-ultimoResultado = { tipo: 'calculo', modo, grauAtual, grausRestantes, metragemRestante, data: new Date().toLocaleString('pt-BR'), nomePeca, mediaComprimento, quantidadeFuros, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
+ultimoResultado = {
+tipo: 'calculo',
+modo,
+data: new Date().toLocaleString('pt-BR'),
+nomePeca,
+comprimentosTexto,
+quantidadeFuros,
+metragemDireta,
+grauAtual,
+grausRestantes,
+metragemRestante,
+vidaInserto,
+insertosTexto,
+mediaComprimento,
+totalMetros,
+grausPorMetro,
+quantidadeInsertos: insertosUsados.length,
+mensagemTroca,
+linhasTroca,
+insertosUsados,
+sobraFinal
+};
 
 const badgesResultado = modo === 'direto'
 ? `<span class="badge">Modo: Metragem direta</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span>`
@@ -417,6 +442,49 @@ status
 resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Medida calculada:</strong> ${numeroBR(medidaCalculada)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Status:</strong> ${status}</p></div>`;
 }
 
+
+function preencherValor(id, valor) {
+const el = document.getElementById(id);
+if (!el) return;
+el.value = valor ?? '';
+}
+
+function selecionarModoCalculo(modo) {
+const radio = document.querySelector(`input[name="modoCalculo"][value="${modo || 'peca'}"]`);
+if (radio) radio.checked = true;
+alternarModoCalculo();
+}
+
+function abrirHistorico(index) {
+const historico = getHistorico();
+const item = historico[index];
+
+if (!item || item.tipo !== 'calculo') {
+alert('Este registro não pode ser aberto para edição.');
+return;
+}
+
+preencherValor('nomePeca', item.nomePeca || '');
+selecionarModoCalculo(item.modo || 'peca');
+
+preencherValor('comprimentos', item.comprimentosTexto || '');
+preencherValor('quantidadeFuros', item.quantidadeFuros || '');
+preencherValor('metragemDireta', item.metragemDireta || '');
+preencherValor('grauAtualPeca', item.grauAtual ?? 0);
+preencherValor('vidaInserto', item.vidaInserto || 100);
+preencherValor('insertos', item.insertosTexto || '');
+
+document.getElementById('resultado').innerHTML = '';
+ultimoResultado = null;
+
+abrirAba('calculo');
+
+setTimeout(() => {
+const topo = document.getElementById('abaCalculo');
+if (topo) topo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}, 100);
+}
+
 function salvarHistorico() {
 if (!ultimoResultado) return;
 const historico = getHistorico();
@@ -447,7 +515,7 @@ if (item.tipo === 'broca') {
 return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }
 
-return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Grau atual: ${numeroBR(item.grauAtual || 0, 0)}°</span><span class="badge">Restante: ${numeroBR(item.metragemRestante || item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="secondary" onclick="abrirHistorico(${index})">📂 Abrir</button><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }).join('');
 }
 
