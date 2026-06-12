@@ -70,26 +70,6 @@ button.danger { background: #b91c1c; }
 <label>Nome da peça / moenda</label>
 <input id="nomePeca" type="text" placeholder="Ex: Peça 01" />
 
-
-<label>Modo de cálculo</label>
-<div style="display:grid;gap:6px;margin-top:8px">
-  <label style="margin-top:0;font-weight:normal">
-    <input type="radio" name="modoCalculo" value="peca" checked onchange="alternarModoCalculo()" style="width:auto;margin-right:6px">
-    Calcular pela peça
-  </label>
-  <label style="margin-top:0;font-weight:normal">
-    <input type="radio" name="modoCalculo" value="direto" onchange="alternarModoCalculo()" style="width:auto;margin-right:6px">
-    Informar metragem direta
-  </label>
-</div>
-
-<div id="blocoMetragemDireta" class="hidden">
-  <label>Metragem total da peça (m)</label>
-  <input id="metragemDireta" type="number" step="0.01" placeholder="Ex: 87.63" />
-  <div class="small">Use esta opção quando você já souber a metragem total da peça.</div>
-</div>
-
-<div id="blocoCalculoPeca">
 <label>Comprimentos dos furos em mm</label>
 <textarea id="comprimentos" placeholder="Ex: 50 50 70 72 75"></textarea>
 <div class="small">Pode digitar separado por espaço, vírgula ou um por linha.</div>
@@ -109,7 +89,6 @@ button.danger { background: #b91c1c; }
 <textarea id="insertos" placeholder="Exemplo:&#10;4,9&#10;50&#10;100"></textarea>
 <div class="small">Digite a metragem disponível de cada inserto. Inserto novo = 100 m.</div>
 
-</div>
 <button onclick="calcular(false)">Calcular peça</button>
 <button class="secondary" onclick="calcular(true)">Usar melhor combinação</button>
 <button class="light" onclick="limparFormulario()">Limpar campos</button>
@@ -234,44 +213,35 @@ if (!melhor) return [vidaInserto];
 return melhor.combinacao.sort((a, b) => a - b);
 }
 
-
-function alternarModoCalculo() {
-const modo = document.querySelector('input[name="modoCalculo"]:checked').value;
-document.getElementById('blocoCalculoPeca').classList.toggle('hidden', modo !== 'peca');
-document.getElementById('blocoMetragemDireta').classList.toggle('hidden', modo !== 'direto');
-}
-
 function calcular(usarMelhorCombinacao) {
 const nomePeca = document.getElementById('nomePeca').value.trim() || 'Peça sem nome';
-const modo = document.querySelector('input[name="modoCalculo"]:checked').value;
 const comprimentos = lerNumeros(document.getElementById('comprimentos').value);
 const quantidadeFuros = Number(document.getElementById('quantidadeFuros').value);
 const vidaInserto = Number(document.getElementById('vidaInserto').value) || 100;
 let insertos = lerNumeros(document.getElementById('insertos').value);
 const resultado = document.getElementById('resultado');
 
-let mediaComprimento = 0;
-let totalMetros = 0;
-
-if (modo === 'direto') {
-totalMetros = Number(String(document.getElementById('metragemDireta').value).replace(',', '.'));
-
-if (!totalMetros || totalMetros <= 0) {
-resultado.innerHTML = '<div class="card">Informe a metragem total da peça.</div>';
-return;
-}
-
-} else {
 if (comprimentos.length === 0 || !quantidadeFuros || quantidadeFuros <= 0) {
 resultado.innerHTML = '<div class="card">Preencha os comprimentos dos furos e a quantidade de furos.</div>';
 return;
 }
 
-mediaComprimento = comprimentos.reduce((a, b) => a + b, 0) / comprimentos.length;
-totalMetros = (mediaComprimento * quantidadeFuros) / 1000;
+const mediaComprimento = comprimentos.reduce((a, b) => a + b, 0) / comprimentos.length;
+const totalMetros = (mediaComprimento * quantidadeFuros) / 1000;
+
+const grauAtual = Number(document.getElementById('grauAtualPeca')?.value || 0);
+
+if (grauAtual < 0 || grauAtual > 359) {
+resultado.innerHTML = '<div class="card">Informe um grau entre 0 e 359.</div>';
+return;
 }
 
+const grausRestantes = 360 - grauAtual;
+const metrosPorGrau = totalMetros / 360;
+const metragemRestante = metrosPorGrau * grausRestantes;
+
 const grausPorMetro = 360 / totalMetros;
+
 
 if (insertos.length === 0) insertos = [vidaInserto];
 
@@ -280,7 +250,7 @@ insertos = melhorCombinacao(insertos, totalMetros, vidaInserto);
 document.getElementById('insertos').value = insertos.map(v => String(v).replace('.', ',')).join('\n');
 }
 
-let metrosRestantesPeca = totalMetros;
+let metrosRestantesPeca = metragemRestante;
 let grauAcumulado = 0;
 let insertosUsados = [];
 let indiceInserto = 0;
@@ -317,13 +287,9 @@ return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
 
 const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><strong>${item.nome}</strong><br>Saldo inicial: ${numeroBR(item.saldoInicial)} m<br>Roda: ${numeroBR(item.grausRodados)}°<br>Trabalha de ${numeroBR(item.grauInicio)}° até ${numeroBR(item.grauFinal)}°<br>Consome: ${numeroBR(item.metrosUsados)} m<br>Sobra: ${numeroBR(item.sobra)} m</div>`).join('');
 
-ultimoResultado = { tipo: 'calculo', modo, data: new Date().toLocaleString('pt-BR'), nomePeca, mediaComprimento, quantidadeFuros, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
+ultimoResultado = { tipo: 'calculo', data: new Date().toLocaleString('pt-BR'), nomePeca, mediaComprimento, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
 
-const badgesResultado = modo === 'direto'
-? `<span class="badge">Modo: Metragem direta</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span>`
-: `<span class="badge">Modo: Pela peça</span><span class="badge">Furos: ${quantidadeFuros}</span><span class="badge">Média: ${numeroBR(mediaComprimento)} mm</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span>`;
-
-resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2>${badgesResultado}<div class="operator-report"><h3>Relatório do operador</h3><div class="answer-line"><strong>Quantos insertos preciso?</strong><br>${insertosUsados.length}</div><div class="answer-line"><strong>Trocas</strong>${linhasTroca}</div><div class="answer-line"><strong>Sobra</strong><br>${sobraFinal > 0 ? numeroBR(sobraFinal) + ' m para próxima peça' : 'Não sobra metragem'}</div></div><h3>Detalhamento técnico</h3><p><strong>Troca:</strong> ${mensagemTroca}</p>${cardsInsertos}<button onclick="salvarHistorico()">Salvar no histórico</button></div>`;
+resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2><span class="badge">Furos: ${quantidadeFuros}</span><span class="badge">Média: ${numeroBR(mediaComprimento)} mm</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span><div class="operator-report"><h3>Relatório do operador</h3><div class="answer-line"><strong>Grau atual</strong><br>${numeroBR(grauAtual,0)}°</div><div class="answer-line"><strong>Graus restantes</strong><br>${numeroBR(grausRestantes,0)}°</div><div class="answer-line"><strong>Metragem restante</strong><br>${numeroBR(metragemRestante)} m</div><div class="answer-line"><strong>Quantos insertos preciso?</strong><br>${insertosUsados.length}</div><div class="answer-line"><strong>Trocas</strong>${linhasTroca}</div><div class="answer-line"><strong>Sobra</strong><br>${sobraFinal > 0 ? numeroBR(sobraFinal) + ' m para próxima peça' : 'Não sobra metragem'}</div></div><h3>Detalhamento técnico</h3><p><strong>Troca:</strong> ${mensagemTroca}</p>${cardsInsertos}<button onclick="salvarHistorico()">Salvar no histórico</button></div>`;
 }
 
 function definirBroca() {
@@ -430,7 +396,7 @@ if (item.tipo === 'broca') {
 return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }
 
-return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }).join('');
 }
 
@@ -456,10 +422,6 @@ document.getElementById('comprimentos').value = '';
 document.getElementById('quantidadeFuros').value = '';
 document.getElementById('vidaInserto').value = '100';
 document.getElementById('insertos').value = '';
-if (document.getElementById('metragemDireta')) document.getElementById('metragemDireta').value = '';
-const modoPeca = document.querySelector('input[name="modoCalculo"][value="peca"]');
-if (modoPeca) modoPeca.checked = true;
-alternarModoCalculo();
 document.getElementById('resultado').innerHTML = '';
 ultimoResultado = null;
 }
