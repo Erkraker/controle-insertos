@@ -303,7 +303,7 @@ document.getElementById('insertos').value = insertos.map(v => String(v).replace(
 }
 
 let metrosRestantesPeca = metragemRestante;
-let grauAcumulado = 0;
+let grauAcumulado = grauAtual;;
 let insertosUsados = [];
 let indiceInserto = 0;
 
@@ -333,7 +333,9 @@ const mensagemTroca = insertosUsados.length === 1 ? `Não há troca. O inserto f
 const linhasTroca = insertosUsados.map((item, index) => {
 const ultimo = index === insertosUsados.length - 1;
 const completa = ultimo && item.grauFinal >= 359.999;
-const textoFinal = completa ? 'completa a peça' : `até ${numeroBR(item.grauFinal)}°`;
+const textoFinal = completa
+? `até 360° (completa a peça)`
+: `até ${numeroBR(item.grauFinal)}°`;
 return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
 }).join('');
 
