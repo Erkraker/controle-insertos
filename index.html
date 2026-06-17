@@ -458,7 +458,7 @@ Apagar este
 
 </div>
 
-</div>`;
+</div>`;}).join('');
 }
 
 function apagarItemHistorico(index) {
@@ -467,7 +467,6 @@ historico.splice(index, 1);
 setHistorico(historico);
 carregarHistorico();
 }
-
 function limparHistorico() {
 if (confirm('Deseja apagar todo o histórico?')) {
 localStorage.removeItem(KEY_HISTORICO);
