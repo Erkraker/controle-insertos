@@ -96,7 +96,7 @@ button.danger { background: #b91c1c; }
 
 <div id="blocoCalculoPeca">
 <label>Comprimentos dos furos em mm</label>
-<textarea id="comprimentos" placeholder="Ex:\n70\n71,42\n68,42\n72,10\n83,00"></textarea>
+<textarea id="comprimentos" placeholder="Ex: 50 50 70 72 75"></textarea>
 <div class="small">Pode digitar separado por espaço, vírgula ou um por linha.</div>
 
 <div class="grid2">
@@ -286,7 +286,6 @@ return;
 
 const grausRestantes = 360 - grauAtual;
 const metragemRestante = totalMetros * (grausRestantes / 360);
-const metragemJaUsinada = totalMetros - metragemRestante;
 
 const grausPorMetro = 360 / totalMetros;
 
@@ -299,7 +298,7 @@ document.getElementById('insertos').value = insertos.map(v => String(v).replace(
 }
 
 let metrosRestantesPeca = metragemRestante;
-let grauAcumulado = 0;
+let grauAcumulado = grauAtual;
 let insertosUsados = [];
 let indiceInserto = 0;
 
@@ -335,13 +334,13 @@ return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
 
 const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><strong>${item.nome}</strong><br>Saldo inicial: ${numeroBR(item.saldoInicial)} m<br>Roda: ${numeroBR(item.grausRodados)}°<br>Trabalha de ${numeroBR(item.grauInicio)}° até ${numeroBR(item.grauFinal)}°<br>Consome: ${numeroBR(item.metrosUsados)} m<br>Sobra: ${numeroBR(item.sobra)} m</div>`).join('');
 
-ultimoResultado = { tipo: 'calculo', modo, grauAtual, grausRestantes, metragemRestante, data: new Date().toLocaleString('pt-BR'), nomePeca, mediaComprimento, quantidadeFuros, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
+ultimoResultado = { tipo: 'calculo', modo, data: new Date().toLocaleString('pt-BR'), nomePeca, comprimentosTexto: document.getElementById('comprimentos').value, quantidadeFuros, metragemDireta: document.getElementById('metragemDireta').value, grauAtual, grausRestantes, metragemJaUsinada, metragemRestante, vidaInserto, insertosTexto: document.getElementById('insertos').value, mediaComprimento, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
 
 const badgesResultado = modo === 'direto'
 ? `<span class="badge">Modo: Metragem direta</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span>`
 : `<span class="badge">Modo: Pela peça</span><span class="badge">Furos: ${quantidadeFuros}</span><span class="badge">Média: ${numeroBR(mediaComprimento)} mm</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span>`;
 
-resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2>${badgesResultado}<div class="operator-report"><h3>Relatório do operador</h3><div class="answer-line"><strong>Grau atual</strong><br>${numeroBR(grauAtual,0)}°</div><div class="answer-line"><strong>Graus restantes</strong><br>${numeroBR(grausRestantes,0)}°</div><div class="answer-line"><strong>Metragem já usinada</strong><br>${numeroBR(metragemJaUsinada)} m</div><div class="answer-line"><strong>Metragem restante</strong><br>${numeroBR(metragemRestante)} m</div><div class="answer-line"><strong>Quantos insertos preciso?</strong><br>${insertosUsados.length}</div><div class="answer-line"><strong>Trocas</strong>${linhasTroca}</div><div class="answer-line"><strong>Sobra</strong><br>${sobraFinal > 0 ? numeroBR(sobraFinal) + ' m para próxima peça' : 'Não sobra metragem'}</div></div><h3>Detalhamento técnico</h3><p><strong>Troca:</strong> ${mensagemTroca}</p>${cardsInsertos}<button onclick="salvarHistorico()">Salvar no histórico</button></div>`;
+resultado.innerHTML = `<div class="result-box"><h2>${nomePeca}</h2>${badgesResultado}<div class="operator-report"><h3>Relatório do operador</h3><div class="answer-line"><strong>Grau atual</strong><br>${numeroBR(grauAtual,0)}°</div><div class="answer-line"><strong>Graus restantes</strong><br>${numeroBR(grausRestantes,0)}°</div><div class="answer-line"><strong>Metragem restante</strong><br>${numeroBR(metragemRestante)} m</div><div class="answer-line"><strong>Quantos insertos preciso?</strong><br>${insertosUsados.length}</div><div class="answer-line"><strong>Trocas</strong>${linhasTroca}</div><div class="answer-line"><strong>Sobra</strong><br>${sobraFinal > 0 ? numeroBR(sobraFinal) + ' m para próxima peça' : 'Não sobra metragem'}</div></div><h3>Detalhamento técnico</h3><p><strong>Troca:</strong> ${mensagemTroca}</p>${cardsInsertos}<button onclick="salvarHistorico()">Salvar no histórico</button></div>`;
 }
 
 function definirBroca() {
@@ -418,6 +417,35 @@ status
 resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Medida calculada:</strong> ${numeroBR(medidaCalculada)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Status:</strong> ${status}</p></div>`;
 }
 
+
+function preencherValor(id, valor) {
+const el = document.getElementById(id);
+if (el) el.value = valor ?? '';
+}
+
+function selecionarModoCalculo(modo) {
+const radio = document.querySelector(`input[name="modoCalculo"][value="${modo || 'peca'}"]`);
+if (radio) radio.checked = true;
+alternarModoCalculo();
+}
+
+function abrirHistorico(index) {
+const historico = getHistorico();
+const item = historico[index];
+if (!item || item.tipo !== 'calculo') return;
+
+preencherValor('nomePeca', item.nomePeca || '');
+selecionarModoCalculo(item.modo || 'peca');
+preencherValor('comprimentos', item.comprimentosTexto || '');
+preencherValor('quantidadeFuros', item.quantidadeFuros || '');
+preencherValor('metragemDireta', item.metragemDireta || '');
+preencherValor('grauAtualPeca', item.grauAtual || 0);
+preencherValor('vidaInserto', item.vidaInserto || 100);
+preencherValor('insertos', item.insertosTexto || '');
+document.getElementById('resultado').innerHTML='';
+abrirAba('calculo');
+}
+
 function salvarHistorico() {
 if (!ultimoResultado) return;
 const historico = getHistorico();
@@ -445,10 +473,10 @@ if (historico.length === 0) { lista.innerHTML = '<div class="card">Nenhum cálcu
 
 lista.innerHTML = historico.map((item, index) => {
 if (item.tipo === 'broca') {
-return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="secondary" onclick="abrirHistorico(${index})">📂 Abrir</button><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }
 
-return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="secondary" onclick="abrirHistorico(${index})">📂 Abrir</button><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }).join('');
 }
 
