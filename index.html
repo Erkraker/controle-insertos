@@ -427,38 +427,8 @@ lista.innerHTML = historico.map((item, index) => {
 if (item.tipo === 'broca') {
 return `<div class="history-item"><h3>Definição de Broca</h3><div class="small">${item.data}</div><span class="badge">Furo Ø${numeroBR(item.diametroFuro)} mm</span><span class="badge">Broca Ø${item.brocaDiametro} ${item.brocaTipo}</span><span class="badge">Medida: ${numeroBR(item.comprimentoNecessario)} mm</span><p><strong>Status:</strong><br>${item.status}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
 }
-return `<div class="history-item">
-<h3>${item.nomePeca}</h3>
-
-<div class="small">${item.data}</div>
-
-<span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span>
-
-<span class="badge">Total: ${numeroBR(item.totalMetros)} m</span>
-
-<span class="badge">Grau atual: ${numeroBR(item.grauAtual || 0,0)}°</span>
-
-<span class="badge">Insertos: ${item.quantidadeInsertos}</span>
-
-<span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span>
-
-<p><strong>Troca:</strong><br>${item.mensagemTroca}</p>
-
-<div class="row-actions">
-
-<button class="secondary"
-onclick="abrirHistorico(${index})">
-📂 Abrir
-</button>
-
-<button class="danger"
-onclick="apagarItemHistorico(${index})">
-Apagar este
-</button>
-
-</div>
-
-</div>`;}).join('');
+return `<div class="history-item"><h3>${item.nomePeca}</h3><div class="small">${item.data}</div><span class="badge">Modo: ${item.modo === 'direto' ? 'Metragem direta' : 'Pela peça'}</span><span class="badge">Total: ${numeroBR(item.totalMetros)} m</span><span class="badge">Insertos: ${item.quantidadeInsertos}</span><span class="badge">Sobra: ${numeroBR(item.sobraFinal)} m</span><p><strong>Troca:</strong><br>${item.mensagemTroca}</p><div class="row-actions"><button class="danger" onclick="apagarItemHistorico(${index})">Apagar este</button></div></div>`;
+}).join('');
 }
 
 function apagarItemHistorico(index) {
@@ -467,6 +437,7 @@ historico.splice(index, 1);
 setHistorico(historico);
 carregarHistorico();
 }
+
 function limparHistorico() {
 if (confirm('Deseja apagar todo o histórico?')) {
 localStorage.removeItem(KEY_HISTORICO);
