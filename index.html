@@ -299,7 +299,7 @@ document.getElementById('insertos').value = insertos.map(v => String(v).replace(
 }
 
 let metrosRestantesPeca = metragemRestante;
-let grauAcumulado = 0;
+let grauAcumulado = grauAtual;;
 let insertosUsados = [];
 let indiceInserto = 0;
 
@@ -327,10 +327,22 @@ const sobraFinal = ultimoInserto.sobra;
 const mensagemTroca = insertosUsados.length === 1 ? `Não há troca. O inserto faz a peça toda, ou seja, 360°, e ainda sobra ${numeroBR(sobraFinal)} m para uma próxima peça.` : `Precisa de ${insertosUsados.length} insertos. A troca acontece conforme os graus abaixo.`;
 
 const linhasTroca = insertosUsados.map((item, index) => {
+
 const ultimo = index === insertosUsados.length - 1;
-const completa = ultimo && item.grauFinal >= 359.999;
-const textoFinal = completa ? 'completa a peça' : `até ${numeroBR(item.grauFinal)}°`;
+
+const completa =
+ultimo &&
+item.grauFinal >= 359;
+
+const grauFinalExibicao =
+completa ? 360 : item.grauFinal;
+
+const textoFinal = completa
+? `até 360° (completa a peça)`
+: `até ${numeroBR(grauFinalExibicao)}°`;
+
 return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
+
 }).join('');
 
 const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><strong>${item.nome}</strong><br>Saldo inicial: ${numeroBR(item.saldoInicial)} m<br>Roda: ${numeroBR(item.grausRodados)}°<br>Trabalha de ${numeroBR(item.grauInicio)}° até ${numeroBR(item.grauFinal)}°<br>Consome: ${numeroBR(item.metrosUsados)} m<br>Sobra: ${numeroBR(item.sobra)} m</div>`).join('');
