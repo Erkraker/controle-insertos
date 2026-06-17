@@ -435,6 +435,49 @@ status
 resultadoBroca.innerHTML = `<div class="card ${atende ? 'broca-ok' : 'broca-alerta'}"><h2>Resultado da broca</h2><span class="badge">Furo Ø${numeroBR(diametroFuro)} mm</span><span class="badge">Broca Ø${brocaDiametro}</span><span class="badge">${tipo}</span><p><strong>Medida calculada:</strong> ${numeroBR(medidaCalculada)} mm</p><p><strong>Limite da broca:</strong> ${numeroBR(limite)} mm</p><p><strong>Folga:</strong> ${numeroBR(folga)} mm</p><p><strong>Status:</strong> ${status}</p></div>`;
 }
 
+
+function preencherValor(id, valor) {
+const el = document.getElementById(id);
+if (!el) return;
+el.value = valor ?? '';
+}
+
+function selecionarModoCalculo(modo) {
+const radio = document.querySelector(`input[name="modoCalculo"][value="${modo || 'peca'}"]`);
+if (radio) radio.checked = true;
+alternarModoCalculo();
+}
+
+function abrirHistorico(index) {
+const historico = getHistorico();
+const item = historico[index];
+
+if (!item || item.tipo !== 'calculo') {
+alert('Este registro não pode ser aberto para edição.');
+return;
+}
+
+preencherValor('nomePeca', item.nomePeca || '');
+selecionarModoCalculo(item.modo || 'peca');
+
+preencherValor('comprimentos', item.comprimentosTexto || '');
+preencherValor('quantidadeFuros', item.quantidadeFuros || '');
+preencherValor('metragemDireta', item.metragemDireta || '');
+preencherValor('grauAtualPeca', item.grauAtual ?? 0);
+preencherValor('vidaInserto', item.vidaInserto || 100);
+preencherValor('insertos', item.insertosTexto || '');
+
+document.getElementById('resultado').innerHTML = '';
+ultimoResultado = null;
+
+abrirAba('calculo');
+
+setTimeout(() => {
+const topo = document.getElementById('abaCalculo');
+if (topo) topo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}, 100);
+}
+
 function salvarHistorico() {
 if (!ultimoResultado) return;
 const historico = getHistorico();
@@ -442,7 +485,6 @@ historico.unshift(ultimoResultado);
 setHistorico(historico);
 alert('Cálculo salvo no histórico.');
 }
-
 function salvarHistoricoBroca() {
 if (!ultimoResultadoBroca) {
 alert('Defina a broca antes de salvar.');
