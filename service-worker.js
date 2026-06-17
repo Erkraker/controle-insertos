@@ -1,4 +1,4 @@
-const CACHE_NAME = 'controle-insertos-v5-1-metros-rodados-20260612-01';
+const CACHE_NAME = 'controle-insertos-v5-2-corrigido-20260617-01';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', event => {
