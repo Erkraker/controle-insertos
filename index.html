@@ -352,7 +352,9 @@ return `<div class="troca-item">${item.nome} → ${textoFinal}</div>`;
 
 const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><strong>${item.nome}</strong><br>Saldo inicial: ${numeroBR(item.saldoInicial)} m<br>Roda: ${numeroBR(item.grausRodados)}°<br>Trabalha de ${numeroBR(item.grauInicio)}° até ${numeroBR(item.grauFinal)}°<br>Consome: ${numeroBR(item.metrosUsados)} m<br>Sobra: ${numeroBR(item.sobra)} m</div>`).join('');
 
-ultimoResultado = { tipo: 'calculo', modo, grauAtual, grausRestantes, metragemRestante, data: new Date().toLocaleString('pt-BR'), nomePeca, mediaComprimento, quantidadeFuros, totalMetros, grausPorMetro, quantidadeInsertos: insertosUsados.length, mensagemTroca, linhasTroca, insertosUsados, sobraFinal };
+let ultimoResultado = null;
+let ultimoResultadoBroca = null;
+const KEY_HISTORICO = 'historicoInsertos_v3_simples';
 
 const badgesResultado = modo === 'direto'
 ? `<span class="badge">Modo: Metragem direta</span><span class="badge">Total: ${numeroBR(totalMetros)} m</span><span class="badge">${numeroBR(grausPorMetro, 4)}° por metro</span>`
