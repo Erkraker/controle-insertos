@@ -470,7 +470,34 @@ preencherValor('vidaInserto', item.vidaInserto || 100);
 preencherValor('insertos', item.insertosTexto || '');
 
 document.getElementById('resultado').innerHTML = '';
-ultimoResultado = null;
+ultimoResultado = {
+tipo: 'calculo',
+data: new Date().toLocaleString('pt-BR'),
+
+nomePeca,
+modo,
+
+comprimentosTexto: document.getElementById('comprimentos').value,
+
+quantidadeFuros: document.getElementById('quantidadeFuros').value,
+
+metragemDireta: document.getElementById('metragemDireta').value,
+
+grauAtual: document.getElementById('grauAtualPeca').value,
+
+vidaInserto: document.getElementById('vidaInserto').value,
+
+insertosTexto: document.getElementById('insertos').value,
+
+totalMetros,
+metragemJaUsinada,
+metragemRestante,
+
+quantidadeInsertos: insertosUsados.length,
+
+mensagemTroca,
+sobraFinal
+};
 
 abrirAba('calculo');
 
