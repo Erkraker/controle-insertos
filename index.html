@@ -354,24 +354,30 @@ const cardsInsertos = insertosUsados.map(item => `<div class="insert-card"><stro
 
 ultimoResultado = {
 tipo: 'calculo',
-modo,
 data: new Date().toLocaleString('pt-BR'),
+
 nomePeca,
-comprimentosTexto,
-quantidadeFuros,
-metragemDireta,
-grauAtual,
-grausRestantes,
-metragemRestante,
-vidaInserto,
-insertosTexto,
-mediaComprimento,
+modo,
+
+comprimentosTexto: document.getElementById('comprimentos').value,
+
+quantidadeFuros: document.getElementById('quantidadeFuros').value,
+
+metragemDireta: document.getElementById('metragemDireta').value,
+
+grauAtual: document.getElementById('grauAtualPeca').value,
+
+vidaInserto: document.getElementById('vidaInserto').value,
+
+insertosTexto: document.getElementById('insertos').value,
+
 totalMetros,
-grausPorMetro,
+metragemJaUsinada,
+metragemRestante,
+
 quantidadeInsertos: insertosUsados.length,
+
 mensagemTroca,
-linhasTroca,
-insertosUsados,
 sobraFinal
 };
 
